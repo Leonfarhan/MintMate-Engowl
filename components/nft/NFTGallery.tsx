@@ -16,7 +16,7 @@ export default function NFTGallery() {
   const [nfts, setNfts] = useState<NFTMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { contract } = useContract("0xA895a9b5882DBa287CF359b6a722C5be46aCb675");
+  const { contract } = useContract("0xA895a9b5882DBa287CF359b6a722C5be46aCb675"); // Pastikan contract address benar
   const { data: tokenCounter } = useContractRead(contract, "_tokenIdCounter");
 
   useEffect(() => {
@@ -27,8 +27,15 @@ export default function NFTGallery() {
         const nftData = [];
         for (let i = 0; i < Number(tokenCounter); i++) {
           const uri = await contract.call("tokenURI", [i]);
-          const response = await fetch(uri);
+
+          const ipfsGatewayUrl = uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+          const response = await fetch(ipfsGatewayUrl);
           const metadata = await response.json();
+
+
+          if (metadata.image && metadata.image.startsWith("ipfs://")) {
+            metadata.image = metadata.image.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+          }
           nftData.push(metadata);
         }
         setNfts(nftData);
@@ -44,25 +51,25 @@ export default function NFTGallery() {
 
   if (isLoading) {
     return (
-      <Card className="p-6 flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </Card>
+        <Card className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </Card>
     );
   }
 
   return (
-    <Card className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Minted NFTs</h2>
-      
-      {nfts.length === 0 ? (
-        <p className="text-center text-gray-500">No NFTs have been minted yet</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {nfts.map((nft, index) => (
-            <NFTCard key={index} nft={nft} />
-          ))}
-        </div>
-      )}
-    </Card>
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold mb-6">Minted NFTs</h2>
+
+        {nfts.length === 0 ? (
+            <p className="text-center text-gray-500">No NFTs have been minted yet</p>
+        ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {nfts.map((nft, index) => (
+                  <NFTCard key={index} nft={nft} />
+              ))}
+            </div>
+        )}
+      </Card>
   );
 }
